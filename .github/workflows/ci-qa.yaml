@@ -1,0 +1,33 @@
+name: CI/CD QA Pipeline workflow for tests
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - "hotfix/*"
+  pull_request:
+    branches-ignore:
+      - main
+      - "hotfix/*"
+
+jobs:
+  # JOB 1: Test checkout actions
+  test:
+    name: Run QA Tests
+    runs-on: ubuntu-latest
+    environment: "Preview – family-dashboard-qa"
+    env:
+      ENV_TYPE: ${{ vars.ENV_TYPE }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Echo environment name
+        run: echo "Environment is $ENV_TYPE"
+
+      - name: Echo github variables
+        run: echo "The ref - ${{ github.ref }}, event name - ${{ github.event_name }}, branch name - ${{ github.head_ref }}, name - ${{ github.ref_name}}"
+      
