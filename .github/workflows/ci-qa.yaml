@@ -68,3 +68,8 @@ jobs:
           vercel build --token=${{ secrets.VERCEL_TOKEN }}
           vercel deploy -m githubDeployment="1" -m githubCommitRef=${CommitRef} --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
           exit 0
+
+      - name: Check if its push to qa branch
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/qa' }}
+        run: |
+          echo "This is a push to qa branch. Deployment will be handled by Vercel automatically."
