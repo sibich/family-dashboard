@@ -1,4 +1,4 @@
-name: CI/CD QA Pipeline workflow for tests
+name: CI/CD QA Pipeline workflow
 
 on:
   push:
