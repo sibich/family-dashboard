@@ -1,0 +1,75 @@
+name: CI/CD QA Pipeline workflow
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - "hotfix/*"
+  pull_request:
+    branches-ignore:
+      - main
+      - "hotfix/*"
+
+jobs:
+  # JOB 1: Test checkout actions
+  test:
+    name: Run QA Tests
+    runs-on: ubuntu-latest
+    environment: "ProductionQA"
+    env:
+      ENV_TYPE: ${{ vars.ENV_TYPE }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Echo environment name
+        run: echo "Environment is $ENV_TYPE"
+
+      - name: Echo github variables
+        run: echo "The ref - ${{ github.ref }}, event name - ${{ github.event_name }}, branch name - ${{ github.head_ref }}, name - ${{ github.ref_name}}"
+
+      # 2. Install Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Run Linting
+      - name: Run Linting
+        run: npm run lint
+
+      # 5. Run Unit Tests
+      - name: Run tests
+        run: npm run test
+
+      - name: Check if its PR not from qa branch
+        if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' && github.head_ref != 'qa') && !endsWith(github.ref, '/merge') && github.ref != 'refs/heads/qa' }}
+        run: |
+          echo "This is a PR and not from qa branch. Proceeding with Preview deployment."
+          if [[ -z "${{ github.head_ref }}" ]]; then
+            CommitRef=${{ github.ref_name}}
+          else
+            CommitRef=${{ github.head_ref}}
+          fi
+          echo "CommitRef is $CommitRef"
+          npm install --global vercel@latest
+          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy -m githubDeployment="1" -m githubCommitRef=${CommitRef} --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+          exit 0
+
+      - name: Check if its push to qa branch
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/qa' }}
+        run: |
+          echo "This is a push to qa branch. Deployment will be handled by Vercel automatically."
