@@ -17,7 +17,7 @@ export default async function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <header className="flex justify-between items-center max-w-2xl mx-auto mb-8">
-        <h1 className="text-3xl font-bold">Family Dashboard 🏠</h1>
+        <h1 className="text-3xl font-bold">❄️ Sibichy Family 🏠 Dashboard 🏂️  ❄️</h1>
         <div className="flex gap-4 items-center">
           <span>Hello, {session.user.name}</span>
           {session.user.role === 'ADMIN' && (
@@ -31,9 +31,9 @@ export default async function Dashboard() {
       <div className="max-w-2xl mx-auto bg-white p-6 rounded shadow mb-8">
         <h2 className="text-lg font-semibold mb-2">New Post</h2>
         <form action={async (formData) => {
-            'use server'
-            await createPost(session.user.id, formData);
-          }} className="space-y-3">
+          'use server'
+          await createPost(session.user.id, formData);
+        }} className="space-y-3">
           <textarea name="content" placeholder="What's happening?" required className="w-full border p-2 rounded" />
           <div className="flex items-center gap-4">
             <input type="file" name="image" accept="image/*" className="text-sm" />
@@ -52,12 +52,12 @@ export default async function Dashboard() {
               <span className="text-xs text-gray-500">{post.createdAt.toLocaleDateString()}</span>
             </div>
             <p className="mb-4">{post.content}</p>
-            
+
             {post.imageBase64 && (
-              <img 
-                src={post.imageBase64} 
-                alt="Post attachment" 
-                className="mb-4 object-cover" 
+              <img
+                src={post.imageBase64}
+                alt="Post attachment"
+                className="mb-4 object-cover"
                 style={{ width: '200px', height: '200px' }} // Fixed dimensions as requested
               />
             )}
