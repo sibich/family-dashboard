@@ -17,7 +17,7 @@ export default async function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <header className="flex justify-between items-center max-w-2xl mx-auto mb-8">
-        <h1 className="text-3xl font-bold">❄️ Sibichy Family 🏠 Dashboard 🏂️  ❄️</h1>
+        <h1 className="text-3xl font-bold">❄️ Sibichy Family 🏠 Board 🏂️  ❄️</h1>
         <div className="flex gap-4 items-center">
           <span>Hello, {session.user.name}</span>
           {session.user.role === 'ADMIN' && (
