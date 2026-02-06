@@ -53,23 +53,44 @@ jobs:
       - name: Run tests
         run: npm run test
 
-      - name: Check if its PR not from qa branch
-        if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' && github.head_ref != 'qa') && !endsWith(github.ref, '/merge') && github.ref != 'refs/heads/qa' }}
+      - name: Extract Coverage
+        id: coverage  # <--- Important: This ID is used to reference outputs later
         run: |
-          echo "This is a PR and not from qa branch. Proceeding with Preview deployment."
-          if [[ -z "${{ github.head_ref }}" ]]; then
-            CommitRef=${{ github.ref_name}}
-          else
-            CommitRef=${{ github.head_ref}}
-          fi
-          echo "CommitRef is $CommitRef"
-          npm install --global vercel@latest
-          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-          vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          vercel deploy -m githubDeployment="1" -m githubCommitRef=${CommitRef} --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
-          exit 0
+          # Use jq to read the total line coverage percentage
+          # You can change '.total.lines.pct' to '.total.statements.pct' etc.
+          LINES_PCT=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
+          STATEMENTS_PCT=$(jq -r '.total.statements.pct' coverage/coverage-summary.json)
+          BRANCHES_PCT=$(jq -r '.total.branches.pct' coverage/coverage-summary.json)
+          FUNCTIONS_PCT=$(jq -r '.total.functions.pct' coverage/coverage-summary.json)
 
-      - name: Check if its push to qa branch
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/qa' }}
-        run: |
-          echo "This is a push to qa branch. Deployment will be handled by Vercel automatically."
+          echo "Current Line Coverage: $LINES_PCT%"
+          echo "Current Statement Coverage: $STATEMENTS_PCT%"
+          echo "Current Branch Coverage: $BRANCHES_PCT%"
+          echo "Current Function Coverage: $FUNCTIONS_PCT%"
+          
+          # Write to GITHUB_OUTPUT
+          echo "lines=$LINES_PCT" >> $GITHUB_OUTPUT
+          echo "statements=$STATEMENTS_PCT" >> $GITHUB_OUTPUT
+          echo "branches=$BRANCHES_PCT" >> $GITHUB_OUTPUT
+          echo "functions=$FUNCTIONS_PCT" >> $GITHUB_OUTPUT
+
+      # - name: Check if its PR not from qa branch
+      #   if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' && github.head_ref != 'qa') && !endsWith(github.ref, '/merge') && github.ref != 'refs/heads/qa' }}
+      #   run: |
+      #     echo "This is a PR and not from qa branch. Proceeding with Preview deployment."
+      #     if [[ -z "${{ github.head_ref }}" ]]; then
+      #       CommitRef=${{ github.ref_name}}
+      #     else
+      #       CommitRef=${{ github.head_ref}}
+      #     fi
+      #     echo "CommitRef is $CommitRef"
+      #     npm install --global vercel@latest
+      #     vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+      #     vercel build --token=${{ secrets.VERCEL_TOKEN }}
+      #     vercel deploy -m githubDeployment="1" -m githubCommitRef=${CommitRef} --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+      #     exit 0
+
+      # - name: Check if its push to qa branch
+      #   if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/qa' }}
+      #   run: |
+      #     echo "This is a push to qa branch. Deployment will be handled by Vercel automatically."

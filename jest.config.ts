@@ -2,6 +2,16 @@
 import type { Config } from 'jest'
 
 const config: Config = {
+  collectCoverage: true,
+  coverageDirectory: './coverage',
+  coverageThreshold: {
+    global: {
+      branches: 10,
+      functions: 10,
+      lines: 10,
+      statements: 10,
+    }
+  },
   preset: 'ts-jest',
   testEnvironment: 'node',
   moduleNameMapper: {
