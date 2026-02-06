@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest --config ./jest.config.ts --coverageReporters='json-summary'",
+    "test": "jest --config ./jest.config.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
