@@ -51,9 +51,13 @@ jobs:
       - name: Run Linting
         run: npm run lint
 
-      # 5. Run Unit Tests
+      # 5. Run Unit Tests for changed files
       - name: Run tests
-        run: npm run test -- --changedSince=${{ github.base_ref }} --coverageReporters='json-summary'
+        run: npm run test -- --changedSince=${{ github.base_ref }}
+
+      # 5. Run Unit Tests to record coverage into json file
+      - name: Run tests
+        run: npm run test -- --coverageReporters='json-summary'
 
       - name: Extract Coverage
         id: coverage  # <--- Important: This ID is used to reference outputs later
