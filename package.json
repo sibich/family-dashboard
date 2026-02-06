@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest --config ./jest.config.ts --changedSince=main",
+    "test": "jest --config ./jest.config.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

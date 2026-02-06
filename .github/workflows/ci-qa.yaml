@@ -53,7 +53,7 @@ jobs:
 
       # 5. Run Unit Tests
       - name: Run tests
-        run: npm run test
+        run: npm run test -- --changedSince=${{ github.base_ref }}
 
       - name: Extract Coverage
         id: coverage  # <--- Important: This ID is used to reference outputs later
