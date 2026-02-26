@@ -53,9 +53,9 @@ jobs:
       - name: Run Linting
         run: npm run lint
 
-      # 5. Run Unit Tests for changed files
-      - name: Run tests
-        run: npm run test -- --changedSince=${{ github.base_ref }}
+      # # 5. Run Unit Tests for changed files
+      # - name: Run tests
+      #   run: npm run test -- --changedSince=${{ github.base_ref }}
 
       # 5. Run Unit Tests to record coverage into json file
       - name: Run tests
