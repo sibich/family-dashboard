@@ -1,21 +1,22 @@
-name: CI/CD QA Pipeline workflow
+name: CI/CD PROD Pipeline workflow
 
 on:
+  # Trigger on Pushes to Main (Production Deploy)
   push:
-    branches-ignore:
+    branches:
       - main
-      - "hotfix/*"
+  # Trigger on PRs to Main (Preview Deploys)
   pull_request:
-    branches-ignore:
+    types: [opened, synchronize, reopened]
+    branches:
       - main
-      - "hotfix/*"
-
+      - 'hotfix/*'
 jobs:
   # JOB 1: Test checkout actions
   test:
     name: Run QA Tests
     runs-on: ubuntu-latest
-    environment: "ProductionQA"
+    environment: "PreviewProd"
     env:
       ENV_TYPE: ${{ vars.ENV_TYPE }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -52,9 +53,9 @@ jobs:
       - name: Run Linting
         run: npm run lint
 
-      # 5. Run Unit Tests for changed files
-      - name: Run tests
-        run: npm run test -- --changedSince=${{ github.base_ref }}
+      # # 5. Run Unit Tests for changed files
+      # - name: Run tests
+      #   run: npm run test -- --changedSince=${{ github.base_ref }}
 
       # 5. Run Unit Tests to record coverage into json file
       - name: Run tests
@@ -81,10 +82,10 @@ jobs:
           echo "branches=$BRANCHES_PCT" >> $GITHUB_OUTPUT
           echo "functions=$FUNCTIONS_PCT" >> $GITHUB_OUTPUT
 
-      - name: Check if its PR not from qa branch
-        if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' && github.head_ref != 'qa') && !endsWith(github.ref, '/merge') && github.ref != 'refs/heads/qa' }}
+      - name: Check if its PR not from main branch
+        if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' && github.head_ref != 'main') && !endsWith(github.ref, '/merge') && github.ref != 'refs/heads/main' }}
         run: |
-          echo "This is a PR and not from qa branch. Proceeding with Preview deployment."
+          echo "This is a PR and not from main branch. Proceeding with Preview deployment."
           if [[ -z "${{ github.head_ref }}" ]]; then
             CommitRef=${{ github.ref_name}}
           else
@@ -96,8 +97,20 @@ jobs:
           vercel build --token=${{ secrets.VERCEL_TOKEN }}
           vercel deploy -m githubDeployment="1" -m githubCommitRef=${CommitRef} --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
           exit 0
-
-      - name: Check if its push to qa branch
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/qa' }}
-        run: |
-          echo "This is a push to qa branch. Deployment will be handled by Vercel automatically."
+  # # JOB 2: Build and deploy to production
+  # build:
+  #   runs-on: ubuntu-latest
+  #   environment: "Production"
+  #   env:
+  #     ENV_TYPE: ${{ vars.ENV_TYPE }}
+  #     VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  #     VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  #     NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+  #     NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+    
+  #   steps:
+  #     - name: Check if its push to main branch
+  #       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+  #       run: |
+  #         echo "This is a push to main branch. Deployment will be handled by Vercel automatically."

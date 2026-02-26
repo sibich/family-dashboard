@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { revalidatePath } from "next/cache"
 
-// --- User Actions ---
+// --- User Actions on frontend ---
 
 export async function registerUser(formData: FormData) {
   const email = formData.get('email') as string;
