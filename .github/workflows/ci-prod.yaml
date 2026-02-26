@@ -110,4 +110,4 @@ jobs:
       - name: Check if its push to main branch
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
-          echo "This is a push to main branch. Deployment will be handled by Vercel automatically in prod."
+          echo "This is a push to main branch. Deployment will be handled by Vercel automatically in prod environment."
