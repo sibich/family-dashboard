@@ -54,7 +54,7 @@ jobs:
 
       # 5. Run Unit Tests for changed files
       - name: Run tests
-        run: npm run test -- --changedSince=${{ github.base_ref }}
+        run: npm run test -- --changedSince=
 
       # 5. Run Unit Tests to record coverage into json file
       - name: Run tests
