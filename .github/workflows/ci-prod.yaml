@@ -14,7 +14,7 @@ on:
 jobs:
   # JOB 1: Test checkout actions
   test:
-    name: Run QA Tests
+    name: Run PROD Tests
     runs-on: ubuntu-latest
     environment: "PreviewProd"
     env:
