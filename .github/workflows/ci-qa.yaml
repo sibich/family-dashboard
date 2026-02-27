@@ -42,8 +42,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          cache: 'npm'
+          node-version: "24"
+          cache: "npm"
 
       # 3. Install dependencies
       - name: Install dependencies
@@ -55,14 +55,14 @@ jobs:
 
       # 5. Run Unit Tests for changed files
       - name: Run tests
-        run: npm run test -- --changedSince=
+        run: npm run test -- --changedSince=origin/qa
 
-      # 5. Run Unit Tests to record coverage into json file
+      # 5.1. Run Unit Tests to record coverage into json file
       - name: Run tests
-        run: npm run test -- --coverageReporters='json-summary'
+        run: npm run test -- --changedSince=origin/main --coverageReporters='json-summary'
 
       - name: Extract Coverage
-        id: coverage  # <--- Important: This ID is used to reference outputs later
+        id: coverage # <--- Important: This ID is used to reference outputs later
         run: |
           # Use jq to read the total line coverage percentage
           # You can change '.total.lines.pct' to '.total.statements.pct' etc.
@@ -75,7 +75,7 @@ jobs:
           echo "Current Statement Coverage: $STATEMENTS_PCT%"
           echo "Current Branch Coverage: $BRANCHES_PCT%"
           echo "Current Function Coverage: $FUNCTIONS_PCT%"
-          
+
           # Write to GITHUB_OUTPUT
           echo "lines=$LINES_PCT" >> $GITHUB_OUTPUT
           echo "statements=$STATEMENTS_PCT" >> $GITHUB_OUTPUT
