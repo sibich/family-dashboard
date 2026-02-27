@@ -17,6 +17,7 @@ jobs:
     name: Run PROD Tests
     runs-on: ubuntu-latest
     environment: "PreviewProd"
+    timeout-minutes: 3
     env:
       ENV_TYPE: ${{ vars.ENV_TYPE }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -97,11 +98,12 @@ jobs:
           vercel build --token=${{ secrets.VERCEL_TOKEN }}
           vercel deploy -m githubDeployment="1" -m githubCommitRef=${CommitRef} --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
           exit 0
-  # JOB 2: Build and deploy to production
+  # JOB 2: Build and deploy to production. This job do nothing, just indicate that the build is started and waits for tests to finish
   build:
     runs-on: ubuntu-latest
     needs: test
     environment: "Production"
+    timeout-minutes: 3
     env:
       ENV_TYPE: ${{ vars.ENV_TYPE }}
     
