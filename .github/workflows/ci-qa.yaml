@@ -16,6 +16,7 @@ jobs:
     name: Run QA Tests
     runs-on: ubuntu-latest
     environment: "ProductionQA"
+    timeout-minutes: 3
     env:
       ENV_TYPE: ${{ vars.ENV_TYPE }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
