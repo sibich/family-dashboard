@@ -11,7 +11,7 @@ on:
       - "hotfix/*"
 
 jobs:
-  # JOB 1: Test checkout actions
+  # JOB 1: Test checkout actions. The commit to test vercel permissions changes
   test:
     name: Run QA Tests
     runs-on: ubuntu-latest
