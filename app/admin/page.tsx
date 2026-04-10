@@ -14,7 +14,7 @@ export default async function AdminPage() {
         <div className="glass rounded-3xl p-8 shadow-xl border-2 border-red-200 text-center">
           <div className="text-6xl mb-4">🚫</div>
           <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-6">You don't have permission to view this page.</p>
+          <p className="text-gray-600 mb-6">You don&apos;t have permission to view this page.</p>
           <Link href="/" className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium shadow-lg btn-hover inline-block">
             🏠 Go Back Home
           </Link>
