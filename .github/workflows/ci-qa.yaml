@@ -1,20 +1,23 @@
 name: CI/CD QA Pipeline workflow
 
 on:
-  push:
-    branches-ignore:
-      - main
-      - "hotfix/*"
+  # Previews are driven exclusively by pull_request events (feature -> qa).
+  # This avoids duplicate deploys that would occur if push also triggered on feature branches.
   pull_request:
+    types: [opened, synchronize, reopened]
     branches-ignore:
       - main
       - "hotfix/*"
+  # push only serves the qa branch; Vercel's Git integration handles the actual deploy.
+  push:
+    branches:
+      - qa
+
 # Defined at the root level, applying to all jobs by default
 permissions:
   contents: read
 
 jobs:
-  # JOB 1: Test checkout actions. The commit to test vercel permissions changes
   test:
     name: Run QA Tests
     runs-on: ubuntu-latest
@@ -38,11 +41,21 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      # Ensure origin/qa is present so `jest --changedSince=origin/qa` can resolve it.
+      - name: Fetch qa ref for diff
+        run: git fetch origin qa:refs/remotes/origin/qa || git fetch origin qa
+
       - name: Echo environment name
         run: echo "Environment is $ENV_TYPE"
 
       - name: Echo github variables
-        run: echo "The ref - ${{ github.ref }}, event name - ${{ github.event_name }}, branch name - ${{ github.head_ref }}, name - ${{ github.ref_name}}, main is - ${{ github.ref == github.base_ref}}"
+        env:
+          GH_REF: ${{ github.ref }}
+          GH_EVENT_NAME: ${{ github.event_name }}
+          GH_HEAD_REF: ${{ github.head_ref }}
+          GH_REF_NAME: ${{ github.ref_name }}
+          GH_IS_BASE: ${{ github.ref == github.base_ref }}
+        run: echo "The ref - $GH_REF, event name - $GH_EVENT_NAME, branch name - $GH_HEAD_REF, name - $GH_REF_NAME, main is - $GH_IS_BASE"
 
       # 2. Install Node.js
       - name: Setup Node.js
@@ -59,16 +72,21 @@ jobs:
       - name: Run Linting
         run: npm run lint
 
-      # 5. Run Unit Tests for changed files
+      # 5. Run Unit Tests for changed files (against qa base)
       - name: Run tests
         run: npm run test -- --changedSince=origin/qa --coverageReporters=json-summary --coverageReporters=text
-
 
       - name: Extract Coverage
         id: coverage # <--- Important: This ID is used to reference outputs later
         run: |
-          # Use jq to read the total line coverage percentage
-          # You can change '.total.lines.pct' to '.total.statements.pct' etc.
+          set -euo pipefail
+          # Guard: when there are no changed files, Jest may not emit a coverage summary.
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "No coverage summary found (likely no changed files vs origin/qa). Skipping extraction."
+            exit 0
+          fi
+
+          # Use jq to read total coverage percentages.
           LINES_PCT=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
           STATEMENTS_PCT=$(jq -r '.total.statements.pct' coverage/coverage-summary.json)
           BRANCHES_PCT=$(jq -r '.total.branches.pct' coverage/coverage-summary.json)
@@ -79,26 +97,27 @@ jobs:
           echo "Current Branch Coverage: $BRANCHES_PCT%"
           echo "Current Function Coverage: $FUNCTIONS_PCT%"
 
-          # Write to GITHUB_OUTPUT
+          # Write to GITHUB_OUTPUT (informational; consumed downstream if/when a gate or comment step is added).
           echo "lines=$LINES_PCT" >> $GITHUB_OUTPUT
           echo "statements=$STATEMENTS_PCT" >> $GITHUB_OUTPUT
           echo "branches=$BRANCHES_PCT" >> $GITHUB_OUTPUT
           echo "functions=$FUNCTIONS_PCT" >> $GITHUB_OUTPUT
 
-      - name: Check if its PR not from qa branch
-        if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/qa') }}
+      - name: Deploy preview to Vercel (PR only)
+        if: ${{ github.event_name == 'pull_request' }}
         env:
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          echo "This is a PR and not from qa branch. Proceeding with Preview deployment."
+          set -euo pipefail
+          echo "Pull request event detected. Proceeding with Preview deployment."
           CommitRef="${HEAD_REF:-$REF_NAME}"
+          echo "CommitRef is $CommitRef"
           npm install --global vercel@latest
-          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-          vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          vercel deploy -m githubDeployment=1 -m githubCommitRef="$CommitRef" --prebuilt
-          exit 0
+          vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          vercel build --token="$VERCEL_TOKEN"
+          vercel deploy -m githubDeployment=1 -m githubCommitRef="$CommitRef" --prebuilt --token="$VERCEL_TOKEN"
 
       - name: Check if its push to qa branch
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/qa' }}
