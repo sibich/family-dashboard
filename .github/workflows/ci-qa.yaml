@@ -9,6 +9,9 @@ on:
     branches-ignore:
       - main
       - "hotfix/*"
+# Defined at the root level, applying to all jobs by default
+permissions:
+  contents: read
 
 jobs:
   # JOB 1: Test checkout actions. The commit to test vercel permissions changes
@@ -16,7 +19,10 @@ jobs:
     name: Run QA Tests
     runs-on: ubuntu-latest
     environment: "ProductionQA"
-    timeout-minutes: 3
+    timeout-minutes: 10
+    concurrency:
+      group: qa-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+      cancel-in-progress: true
     env:
       ENV_TYPE: ${{ vars.ENV_TYPE }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -27,7 +33,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -40,7 +46,7 @@ jobs:
 
       # 2. Install Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: "npm"
