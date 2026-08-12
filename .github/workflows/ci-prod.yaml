@@ -6,19 +6,22 @@ on:
     branches:
       - main
       - "hotfix/*"
+      - "demo/*"
   # Trigger on PRs to Main (Preview Deploys)
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
       - main
       - "hotfix/*"
+      - "demo/*"
+
 jobs:
   # JOB 1: Test checkout actions
   test:
     name: Run PROD Tests
     runs-on: ubuntu-latest
     environment: "PreviewProd"
-    timeout-minutes: 3
+    timeout-minutes: 5
     env:
       ENV_TYPE: ${{ vars.ENV_TYPE }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -29,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -42,14 +45,14 @@ jobs:
 
       # 2. Install Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: "npm"
 
       # 3. Install dependencies
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # 4. Run Linting
       - name: Run Linting
@@ -57,11 +60,7 @@ jobs:
 
       # 5. Run Unit Tests for changed files
       - name: Run tests
-        run: npm run test -- --changedSince=origin/main
-
-      # 5.1. Run Unit Tests to record coverage into json file
-      - name: Run tests
-        run: npm run test -- --changedSince=origin/main --coverageReporters='json-summary'
+        run: npm run test
 
       - name: Extract Coverage
         id: coverage # <--- Important: This ID is used to reference outputs later
@@ -104,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     environment: "Production"
-    timeout-minutes: 3
+    timeout-minutes: 10
     env:
       ENV_TYPE: ${{ vars.ENV_TYPE }}
 
