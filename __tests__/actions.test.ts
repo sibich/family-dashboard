@@ -35,14 +35,11 @@ describe('Server Action: registerUser', () => {
     await registerUser(formData);
 
     // Assert: Check if prisma.create was called with ADMIN role
-    // NOTE: Intentionally incorrect expectation to demonstrate a CI pipeline
-    // test failure. The real action sets role: 'ADMIN' for the first user,
-    // so expecting 'EDITOR' here will make Jest (and the CI job) fail.
     expect(prisma.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           email: 'admin@test.com',
-          role: 'EDITOR',   // <--- DEMO: intentionally wrong (real value is 'ADMIN')
+          role: 'ADMIN',    // <--- Crucial Check
           isActive: true,   // <--- Crucial Check
         }),
       })
