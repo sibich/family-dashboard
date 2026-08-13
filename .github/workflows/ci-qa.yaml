@@ -37,7 +37,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -61,14 +60,12 @@ jobs:
       # 2. Install Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v7
-        uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: "npm"
 
       # 3. Install dependencies
       - name: Install dependencies
-        run: npm ci
         run: npm ci
 
       # 4. Run Linting
