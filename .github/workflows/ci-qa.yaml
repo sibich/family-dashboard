@@ -1,17 +1,13 @@
 name: CI/CD QA Pipeline workflow
 
 on:
-  # Previews are driven exclusively by pull_request events (feature -> qa).
-  # This avoids duplicate deploys that would occur if push also triggered on feature branches.
-  pull_request:
-    types: [opened, synchronize, reopened]
+  # Push-driven previews: every push to a feature branch triggers a Vercel preview.
+  # main and hotfix/* are excluded (handled by the prod pipeline).
+  # qa is included: it runs tests but hits the no-op log step (Vercel Git integration deploys qa).
+  push:
     branches-ignore:
       - main
       - "hotfix/*"
-  # push only serves the qa branch; Vercel's Git integration handles the actual deploy.
-  push:
-    branches:
-      - qa
 
 # Defined at the root level, applying to all jobs by default
 permissions:
@@ -24,7 +20,8 @@ jobs:
     environment: "ProductionQA"
     timeout-minutes: 10
     concurrency:
-      group: qa-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+      # Push-only workflow: github.head_ref is always empty, so key purely on github.ref.
+      group: qa-${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
     env:
       ENV_TYPE: ${{ vars.ENV_TYPE }}
@@ -39,7 +36,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
 
       # Ensure origin/qa is present so `jest --changedSince=origin/qa` can resolve it.
       - name: Fetch qa ref for diff
@@ -103,16 +99,15 @@ jobs:
           echo "branches=$BRANCHES_PCT" >> $GITHUB_OUTPUT
           echo "functions=$FUNCTIONS_PCT" >> $GITHUB_OUTPUT
 
-      - name: Deploy preview to Vercel (PR only)
-        if: ${{ github.event_name == 'pull_request' }}
+      - name: Deploy preview to Vercel (feature push)
+        if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/qa' }}
         env:
-          HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           set -euo pipefail
-          echo "Pull request event detected. Proceeding with Preview deployment."
-          CommitRef="${HEAD_REF:-$REF_NAME}"
+          echo "Feature branch push detected. Proceeding with Preview deployment."
+          CommitRef="$REF_NAME"
           echo "CommitRef is $CommitRef"
           npm install --global vercel@latest
           vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
